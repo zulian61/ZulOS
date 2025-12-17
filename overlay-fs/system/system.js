@@ -18,7 +18,7 @@ renderTerminal();
 CatCore.backgroundColor("black");
 CatCore.textColor("white");
 CatCore.textFont("monospace");
-
+var win = null;
 CatCore.keyboard.on("hold", event => {
     if (event.key == "Backspace") {
         command = command.slice(0, -1);
@@ -33,7 +33,7 @@ CatCore.keyboard.on("hold", event => {
             case "zulfetch":
                 var devices = CatCore.getDevices();
                 history += `$ ${command}\n`;
-                history += `CPU: ${devices.processors[0].model} ${devices.processors[0].speed.GHz} GHz (${devices.processors[0].cores})\n`;
+                history += `CPU: ${devices.processors[0].brand} ${devices.processors[0].model} ${devices.processors[0].speed.GHz} GHz (${devices.processors[0].cores})\n`;
                 history += `Memory: ${parseFloat((devices.memory.used.GB - devices.swap.used.GB).toFixed(1))} GB / ${parseFloat(devices.memory.capacity.GB.toFixed(1))} GB\n`;
                 history += `GPU: ${devices.videocards[0].model}\n`;
                 history += `Screen: ${devices.screens[0].width} x ${devices.screens[0].height} ${devices.screens[0].refreshRate.Hz} Hz\n`
@@ -44,6 +44,31 @@ CatCore.keyboard.on("hold", event => {
                 break;
             case "ver":
                 history += `$ ${command}\n${CatCore.systemName} ${CatCore.systemVersion}\n`
+                break;
+            case "win":
+                win = new CatCore.Graphics.Window;
+                win.open();
+                break;
+            case "winkill":
+                win.close();
+                break;
+            case "qemu":
+                var proc = new CatCore.Process({
+                    "type": CatCore.ProcessType.APP,
+                    "path": "/bin/qemu-system-aarch64.app",
+                    "args": "-machine virt,accel=hvf -cpu host -smp 4 -m 6G -drive if=pflash,format=raw,readonly=on,file=/data/code.fd -drive if=pflash,format=raw,file=/data/vars.fd -device ramfb -device qemu-xhci,id=xhci -device usb-kbd,bus=xhci.0 -device usb-mouse,bus=xhci.0 -drive file=/data/disk0.qcow2,if=none,id=sigma -device nvme,drive=sigma,serial=sigma -netdev user,id=nt0 -device virtio-net-pci,netdev=nt0".split(" ")
+                });
+                proc.run();
+                break;
+            case "desktop":
+                win = new CatCore.Graphics.Window;
+                win.fullScreen(true).headless(true);
+                layer = new CatCore.Graphics.Layer;
+                win.setUI(layer);
+                text = new CatCore.Graphics.Text;
+                text.content("ZulOS is the best fr fr!!");
+                layer.add(text);
+                win.open();
                 break;
             default:
                 history += `$ ${command}\nUnknown command.\n`;
