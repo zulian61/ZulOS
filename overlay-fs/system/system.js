@@ -19,16 +19,15 @@ CatCore.backgroundColor("black");
 CatCore.textColor("white");
 CatCore.textFont("monospace");
 var win = null;
-CatCore.keyboard.on("hold", event => {
+CatCore.keyboard.on("hold", async event => {
     if (event.key == "Backspace") {
         command = command.slice(0, -1);
     } else if (event.letter == "Enter") {
-        switch(command) {
+        var args = command.split(" ");
+        var cmd = args.shift();
+        switch(cmd) {
             case "help":
                 history += `$ ${command}\nzulfetch - shows specifications of your machine\nmeow - meows at you\nclear - clears terminal\nver - shows version of ZulOS\n`;
-                break;
-            case "meow":
-                history += `$ ${command}\nMEOW MEOW!!\n`;
                 break;
             case "zulfetch":
                 var devices = CatCore.getDevices();
@@ -71,8 +70,34 @@ CatCore.keyboard.on("hold", event => {
                 win.open();
                 break;
             default:
-                history += `$ ${command}\nUnknown command.\n`;
-                break;
+                if (await CatCore.FS.exists(`/bin/${cmd}`)) {
+                    history += `$ ${command}\n`;
+                    var permissions = {
+                        "Processes": true,
+                        "SpawnProcess": true,
+                        "CursorTracking": true,
+                        "Keyboard": true,
+                        "Overlay": true,
+                        "Graphics": true,
+                        "GetDevices": true,
+                        "ScanDevices": true,
+                        "FileSystem": true,
+                        "System": false,
+                        "Network": true
+                    };
+                    var proc = new CatCore.Process({
+                        "type": CatCore.ProcessType.APP,
+                        "path": `/bin/${cmd}`,
+                        permissions, args
+                    });
+                    proc.on("message", data => {
+                        history += data;
+                        renderTerminal();
+                    });
+                    proc.run();
+                } else {
+                    history += `$ ${command}\nUnknown command.\n`;
+                }
 
         }
         command = "";
